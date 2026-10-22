@@ -11,7 +11,7 @@ Logo and identity for Noise Rest: a calm, "High-Tech Zen" site on Platform Engin
 ## Fixed decisions (do not change without asking)
 
 - Wordmark: lowercase "noise" stacked over a heavy line, with "rest" knocked out of a block that hangs from the line, like the musical whole rest 𝄻.
-- Font: JetBrains Mono. "noise" 300, tracked +0.12em. "rest" 700.
+- Font: JetBrains Mono. "noise" 400, tracked +0.12em, fading n→e. "rest" 800.
 - Colour: "noise" in ink `#2E3440`; line, block and knock-out in the accent.
 - The line is exactly as wide as the visible "noise"; it never overhangs.
 
