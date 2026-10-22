@@ -14,7 +14,7 @@ C, L = T["color"], T["logo"]
 ACCENT = C["accent"][C["accent"]["default"]]
 ACCENT_DARK = C["accent"]["sageOnDark"] if C["accent"]["default"] == "sage" else ACCENT
 S = 100  # font size of "noise" in SVG units
-WEIGHTS = {300: "Light", 400: "Regular", 700: "Bold", 800: "ExtraBold"}
+WEIGHTS = {400: "Regular", 800: "ExtraBold"}
 FONTS = {}
 
 
@@ -49,14 +49,18 @@ def rrect_bottom(x, y, w, h, r):
             f"H{n(x + r)}Q{n(x)} {n(y + h)} {n(x)} {n(y + h - r)}Z")
 
 
-def lockup(noise_w=None, rest_w=None):
-    noise_w = noise_w or L["noise"]["weight"]
-    rest_w = rest_w or L["rest"]["weight"]
+def lockup():
+    noise_w, rest_w = L["noise"]["weight"], L["rest"]["weight"]
     b, r, line = L["block"], L["rest"], L["line"]
     track = L["noise"]["tracking"]
     # Line = visible ink of "noise": measure, then shift so the ink starts at x = 0.
     ink_x0 = outline(L["noise"]["text"], noise_w, S, 0, 0, track)[1]
-    nd, nx0, nx1, ny0, _, _ = outline(L["noise"]["text"], noise_w, S, -ink_x0, 0, track)
+    nx0, nx1, ny0 = outline(L["noise"]["text"], noise_w, S, -ink_x0, 0, track)[1:4]
+    letters, x = [], -ink_x0
+    for ch in L["noise"]["text"]:  # one path per letter, so each can fade
+        d, *_, adv = outline(ch, noise_w, S, x, 0)
+        letters.append(d)
+        x += adv + track * S
     line_w, line_y, line_h = nx1 - nx0, L["gap"] * S, line["height"] * S
     # Block: CSS line box of "rest" (hhea ascent + descent), as in the board 13 reference.
     f = font(rest_w)
@@ -70,7 +74,7 @@ def lockup(noise_w=None, rest_w=None):
     block_h = b["padTop"] * S + asc + desc + b["padBottom"] * S
     block_x = nx0 + (line_w - block_w) / 2
     rd = outline(r["text"], rest_w, rs, block_x + pad_x, block_top + b["padTop"] * S + asc)[0]
-    return dict(noise=nd, line=(nx0, line_y, line_w, line_h), block=(block_x, block_top, block_w, block_h),
+    return dict(noise=letters, line=(nx0, line_y, line_w, line_h), block=(block_x, block_top, block_w, block_h),
                 rest=rd, top=ny0, bottom=block_top + block_h, width=line_w)
 
 
@@ -87,10 +91,12 @@ def block_path(g):
     return rrect_bottom(bx, by - lh, bw, bh + lh, L["block"]["radiusBottom"] * S)
 
 
-def lockup_svg(noise_color, accent, noise_w=None, rest_w=None):
-    g = lockup(noise_w, rest_w)
+def lockup_svg(noise_color, accent):
+    g = lockup()
     lx, ly, lw, lh = g["line"]
-    body = (f'<path fill="{noise_color}" d="{g["noise"]}"/>'
+    fade = "".join(f'<path fill="{noise_color}"{"" if a == 1 else f" fill-opacity=\"{a}\""} d="{d}"/>'
+                   for d, a in zip(g["noise"], L["noise"]["opacity"]))
+    body = (fade +
             f'<rect x="{n(lx)}" y="{n(ly)}" width="{n(lw)}" height="{n(lh)}" fill="{accent}"/>'
             f'<path fill="{accent}" fill-rule="evenodd" d="{block_path(g)}{g["rest"]}"/>')
     return svg((0, g["top"], g["width"], g["bottom"] - g["top"]), body)
@@ -105,27 +111,25 @@ def mark_svg(color):
 
 
 def favicon_svg(size):
-    f = T["favicon"]["viewBox16" if size == 16 else "viewBox48"]  # 32 px scales the 48 grid
+    f = T["favicon"]["viewBox16" if size == 16 else "viewBox48"]
     tw, th, tr = f["tile"][2], f["tile"][3], f["tile"][4] if len(f["tile"]) > 4 else 0
     lx, ly, lw, lh = f["line"]
     bx, by, bw, bh, *br = f["block"]
     body = (f'<rect width="{tw}" height="{th}" rx="{tr}" fill="{C[f["ground"]]}"/>'
             f'<rect x="{lx}" y="{ly}" width="{lw}" height="{lh}" fill="{ACCENT}"/>'
-            f'<path fill="{ACCENT}" d="{rrect_bottom(bx, by, bw, bh, br[0] if br else 0)}"/>')
+            f'<path fill="{ACCENT}" d="{rrect_bottom(bx, ly, bw, bh + by - ly, br[0] if br else 0)}"/>')  # start inside the line: no seam
     return svg((0, 0, tw, th), body, (size, size))
 
 
 def main():
     ink, snow = C["ink"], C["snow"]
     out = {
-        "noise-rest.svg": lockup_svg(ink, ACCENT),
-        "noise-rest-ink.svg": lockup_svg(ink, ink),
-        "noise-rest-reversed.svg": lockup_svg(snow, ACCENT_DARK, rest_w=L["reversed"]["restWeight"]),
-        "noise-rest-reversed-mono.svg": lockup_svg(snow, snow),
-        "noise-rest-small.svg": lockup_svg(ink, ACCENT, L["smallSize"]["noiseWeight"], L["smallSize"]["restWeight"]),
-        "noise-rest-small-reversed.svg": lockup_svg(snow, ACCENT_DARK, L["smallSize"]["noiseWeight"], L["smallSize"]["restWeight"]),
+        "logo.svg": lockup_svg(ink, ACCENT),
+        "logo-mono.svg": lockup_svg(ink, ink),
+        "logo-reversed.svg": lockup_svg(snow, ACCENT_DARK),
+        "logo-mono-reversed.svg": lockup_svg(snow, snow),
         "mark.svg": mark_svg(ACCENT),
-        **{f"favicon-{s}.svg": favicon_svg(s) for s in (16, 32, 48)},
+        **{f"favicon-{s}.svg": favicon_svg(s) for s in (16, 48)},
     }
     d = ROOT / "svg"
     d.mkdir(exist_ok=True)
