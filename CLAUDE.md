@@ -15,6 +15,10 @@ Logo and identity for Noise Rest: a calm, "High-Tech Zen" site on Platform Engin
 - Colour: "noise" in ink `#2E3440`; line, block and knock-out in the accent.
 - The line is exactly as wide as the visible "noise"; it never overhangs.
 
+## Build
+
+`svg/`, `png/`, `favicon.ico` and `docs/styleguide.svg` are generated: edit `design/tokens.json` or `tools/`, never the outputs. Run `tools/outline.py`, then `tools/rasterize.py` (needs ImageMagick), then `tools/styleguide.py`. Re-running must leave `git status` clean. The "don't" examples G10–G12 in `exploration/14-usageguide.html` are hand-pasted inline SVG; update them if the geometry changes.
+
 ## Open
 
 - Accent colour is assumed sage `#6B8B72`; not confirmed.
