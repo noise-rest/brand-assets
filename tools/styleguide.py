@@ -29,8 +29,7 @@ def place(svg, cx, cy, w):
 
 
 ink, snow, night = C["ink"], C["snow"], C["night"]
-card(0, 0, W, H, snow)
-out[-1] = f'<rect width="{W}" height="{H}" fill="{snow}"/>'
+out.append(f'<rect width="{W}" height="{H}" fill="{snow}"/>')
 text("NOISE REST · STYLE GUIDE", M, 58, 14, 400, C["slate"], 0.2)
 
 # Logos: primary, reversed, then the one-colour versions and the mark.
